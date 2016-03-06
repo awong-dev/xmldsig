@@ -54,7 +54,7 @@ module Xmldsig
     end
 
     def canonicalized_signed_info
-      Canonicalizer.new(signed_info, canonicalization_method).canonicalize
+      Canonicalizer.new(signed_info, canonicalization_method, inclusive_namespaces).canonicalize
     end
 
     def calculate_signature_value(private_key, &block)
@@ -62,6 +62,17 @@ module Xmldsig
         private_key.sign(signature_method.new, canonicalized_signed_info)
       else
         yield(canonicalized_signed_info, signature_algorithm)
+      end
+    end
+
+    # TODO: Code copy-pasted from lib/xmldsig/transforms/canonicalize.rb. Should
+    # be facotred out.
+    def inclusive_namespaces
+      inclusive_namespaces = signed_info.at_xpath("descendant::ds:CanonicalizationMethod/ec:InclusiveNamespaces", Xmldsig::NAMESPACES)
+      if inclusive_namespaces && inclusive_namespaces.has_attribute?("PrefixList")
+        inclusive_namespaces.get_attribute("PrefixList").to_s.split(" ")
+      else
+        []
       end
     end
 
